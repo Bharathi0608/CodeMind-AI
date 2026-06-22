@@ -1,0 +1,127 @@
+import os
+# pyrefly: ignore [missing-import]
+from langchain_google_genai import ChatGoogleGenerativeAI   
+# pyrefly: ignore [missing-import]
+from langchain_groq import ChatGroq
+
+def get_llm(model_name=None, temperature=0.2):
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    
+    # If no model is selected, fallback automatically
+    if not model_name:
+        if groq_api_key:
+            model_name = "llama-3.3-70b-versatile"
+        else:
+            model_name = "gemini-2.0-flash"
+            
+    if model_name.startswith("gemini-"):
+        return ChatGoogleGenerativeAI(
+            model=model_name,
+            temperature=temperature,
+            max_retries=5
+        )
+    else:
+        return ChatGroq(
+            model=model_name,
+            temperature=temperature,
+            max_retries=5,
+            groq_api_key=groq_api_key
+        )
+
+def ask_question(vectordb, question, model_name=None, temperature=0.2):
+    docs = vectordb.similarity_search(
+        question,
+        k=5
+    )
+
+    context = "\n\n".join(
+        [doc.page_content for doc in docs]
+    )
+
+    llm = get_llm(model_name=model_name, temperature=temperature)
+
+    prompt = f"""
+
+You are an expert software architect.
+
+Repository Context:
+{context}   
+
+Question:
+{question}  
+
+Answer based only on the repository context.
+"""
+    response = llm.invoke(prompt)
+    
+    content = response.content
+    if isinstance(content, list):
+        text_content = ""
+        for block in content:
+            if isinstance(block, dict) and "text" in block:
+                text_content += block["text"]
+            elif isinstance(block, str):
+                text_content += block
+        return text_content
+        
+    return str(content)
+
+def generate_repo_summary(vectordb, model_name=None, temperature=0.2):
+    summary_question = "Explain the detailed architecture, list the tools and frameworks used, provide a high-level overview of how this project works, and create a highly detailed mermaid flowchart of the architecture showing specific directories and modules."
+    docs = vectordb.similarity_search(
+        summary_question,
+        k=30
+    )
+
+    context = "\n\n".join(
+        [doc.page_content for doc in docs]
+    )
+
+    llm = get_llm(model_name=model_name, temperature=temperature)
+
+    prompt = f"""
+You are an expert software architect analyzing a new codebase.
+Using the provided repository context, create a comprehensive overview of the system architecture and its sequential runtime execution flow.
+Structure your response exactly as follows:
+
+## 🏗 Architecture
+(Explain the high-level architecture and structure)
+
+## 📊 Architecture Flowchart
+(Provide a highly detailed, professional Mermaid flowchart diagram wrapped in a ```mermaid code block.
+CRITICAL RULES FOR THE FLOWCHART:
+- It MUST represent the step-by-step runtime workflow and execution sequence of the repository's main files and functions, tracing from the initial trigger (e.g., User Interaction / API endpoint trigger) through processing logic, to the final outputs/returns.
+- Do NOT show static module relationships or abstract class hierarchies. Instead, design a logical flow of actions (e.g., frontend/app.py --"1. Submits Input"--> backend/api.py --"2. Queries DB"--> backend/db.py --"3. Returns Data"--> frontend/app.py).
+- Keep focus strictly on the project's custom files, functions, and directories. Do NOT add nodes for external databases (like SQLite, PostgreSQL), APIs, libraries, or developer tools. If you need to mention database queries or API calls, show them as labels on the edges/transitions between custom project modules, rather than as separate boxes.
+- Write strict Mermaid v10+ syntax:
+  1. Define all nodes and their labels separately at the top of the chart (e.g., A[Label A], B[Label B]).
+  2. Use simple, short node IDs (A, B, C, D) and connect them on separate lines (e.g., A --> B).
+  3. One connection per line. Do NOT write multiple node definitions or inline labels with connections (never write A[Label] --> B[Label]).
+  4. Replace all parentheses () inside node labels with hyphens (e.g. B[PDF Parser - PyPDF2] instead of B[PDF Parser (PyPDF2)]).
+  5. Never use double or single quotes inside node labels.)
+
+## 🛠 Tools & Frameworks
+(List the key tools, libraries, and frameworks detected)
+
+## ⚙️ How it Works
+(Provide a step-by-step or logical overview of the core functionality)
+
+Repository Context:
+{context}
+
+If the context is insufficient, provide the best possible estimate based on common practices, but note that the context was limited.
+"""
+    response = llm.invoke(prompt)
+    
+    # In newer langchain/gemini versions, content can sometimes be a list of blocks
+    content = response.content
+    if isinstance(content, list):
+        text_content = ""
+        for block in content:
+            if isinstance(block, dict) and "text" in block:
+                text_content += block["text"]
+            elif isinstance(block, str):
+                text_content += block
+        return text_content
+    
+    return str(content)

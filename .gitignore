@@ -1,0 +1,7 @@
+venv/
+**pycache**/
+*.pyc
+.env
+chroma_db/
+backend/chroma_db/
+backend/repositories/

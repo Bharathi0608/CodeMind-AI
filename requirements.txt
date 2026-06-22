@@ -1,0 +1,11 @@
+streamlit
+langchain
+langchain-community
+langchain-google-genai
+chromadb
+google-generativeai
+gitpython
+python-dotenv
+fastapi
+uvicorn
+pydantic
