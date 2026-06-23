@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeMind AI | Architecture Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2">
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+</head>
+<body>
+    <div class="particles" id="particles-js"></div>
+
+    <nav class="top-nav">
+        <div class="top-nav-logo">🧠 CodeMind AI</div>
+        <div class="nav-right">
+            <span class="nav-link">Architect Mode</span>
+            <span class="nav-badge">V2.0 Pro</span>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <h1 class="hero-title">CodeMind AI</h1>
+            <p class="hero-subtitle">The Ultimate AI-Powered Codebase Architect & Knowledge Assistant</p>
+        </header>
+
+        <!-- Configuration Form -->
+        <section class="card config-card">
+            <form id="analyze-form">
+                <div class="input-group">
+                    <input type="url" id="repo-url" placeholder="https://github.com/username/repository" required>
+                    <button type="submit" id="analyze-btn" class="btn-primary">
+                        <span class="btn-text">Analyze Repository</span>
+                        <div class="spinner hidden" id="analyze-spinner"></div>
+                    </button>
+                </div>
+            </form>
+            <div id="status-message" class="hidden"></div>
+        </section>
+
+        <!-- Dashboard / Results -->
+        <div id="results-container" class="hidden">
+            <!-- Markdown Summary -->
+            <section class="card summary-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin-bottom: 0;">📄 AI Repository Analysis</h2>
+                    <button id="download-report-btn" class="btn-secondary" style="padding: 0.5rem 1rem;">📥 Download Report</button>
+                </div>
+                <div id="summary-content" class="markdown-content"></div>
+            </section>
+
+            <!-- Mermaid Flowchart -->
+            <section class="card diagram-card">
+                <h2>📊 Architecture Flowchart</h2>
+                <div class="diagram-wrapper">
+                    <button id="download-btn" class="btn-secondary">📥 Download SVG</button>
+                    <div id="mermaid-container">
+                        <div class="placeholder">Generating Interactive Diagram...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chat Interface -->
+            <section class="card chat-card">
+                <h2>💬 Ask Questions About the Codebase</h2>
+                <div class="chat-suggestions">
+                    <button class="btn-suggestion" onclick="fillChat('Explain the core execution flow of this repository.')">🔍 Explain Core Flow</button>
+                    <button class="btn-suggestion" onclick="fillChat('What are the main libraries, databases, and dependencies used in this project?')">🛠️ List Dependencies</button>
+                    <button class="btn-suggestion" onclick="fillChat('Explain how error handling is structured in this repository.')">🚀 Error Handling</button>
+                </div>
+                
+                <div class="chat-history" id="chat-history"></div>
+
+                <form id="chat-form">
+                    <div class="input-group">
+                        <input type="text" id="chat-input" placeholder="Ask a question..." required>
+                        <button type="submit" class="btn-primary" id="chat-submit-btn">
+                            <span class="btn-text">Send</span>
+                            <div class="spinner hidden" id="chat-spinner"></div>
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        <span>CodeMind AI</span> • Enterprise-grade Codebase Architect & Knowledge Platform<br>
+        <small>© 2026 CodeMind AI. All rights reserved.</small>
+    </footer>
+
+    <!-- Include Mermaid dynamically -->
+    <script type="module" src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>

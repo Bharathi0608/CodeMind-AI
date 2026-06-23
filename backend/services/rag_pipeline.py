@@ -85,7 +85,7 @@ Using the provided repository context, create a comprehensive overview of the sy
 Structure your response exactly as follows:
 
 ## 🏗 Architecture
-(Explain the high-level architecture and structure)
+(Provide an extremely detailed, professional breakdown of the high-level architecture, module design, and file structure. Use formatted bullet points and ensure there is a blank line between each point for readability. Explain exactly how the major components interact with each other.)
 
 ## 📊 Architecture Flowchart
 (Provide a highly detailed, professional Mermaid flowchart diagram wrapped in a ```mermaid code block.
@@ -101,10 +101,10 @@ CRITICAL RULES FOR THE FLOWCHART:
   5. Never use double or single quotes inside node labels.)
 
 ## 🛠 Tools & Frameworks
-(List the key tools, libraries, and frameworks detected)
+(List ALL key tools, libraries, and frameworks detected. Format this as a bulleted list. For EACH tool, write a detailed 2-3 sentence explanation of EXACTLY why it was chosen and the specific role it plays. Leave a blank line between each tool.)
 
 ## ⚙️ How it Works
-(Provide a step-by-step or logical overview of the core functionality)
+(Provide an exhaustive, step-by-step technical walkthrough of the core functionality. Break down the execution flow from start to finish using numbered lists or bullet points. Leave a blank empty line between each step so that the text is not compressed together.)
 
 Repository Context:
 {context}
