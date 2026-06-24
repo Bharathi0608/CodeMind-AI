@@ -3,16 +3,20 @@ import os
 from langchain_google_genai import ChatGoogleGenerativeAI   
 # pyrefly: ignore [missing-import]
 from langchain_groq import ChatGroq
+from groq import RateLimitError
 
 def get_llm(model_name=None, temperature=0.2):
     groq_api_key = os.getenv("GROQ_API_KEY")
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
     
     # If no model is selected, fallback automatically
     if not model_name:
         if groq_api_key:
             model_name = "llama-3.3-70b-versatile"
-        else:
+        elif gemini_api_key:
             model_name = "gemini-2.0-flash"
+        else:
+            raise ValueError("No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in .env file.")
             
     if model_name.startswith("gemini-"):
         return ChatGoogleGenerativeAI(
@@ -38,7 +42,10 @@ def ask_question(vectordb, question, model_name=None, temperature=0.2):
         [doc.page_content for doc in docs]
     )
 
-    llm = get_llm(model_name=model_name, temperature=temperature)
+    try:
+        llm = get_llm(model_name=model_name, temperature=temperature)
+    except ValueError:
+        return "Error: No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in .env file."
 
     prompt = f"""
 
@@ -52,7 +59,19 @@ Question:
 
 Answer based only on the repository context.
 """
-    response = llm.invoke(prompt)
+    
+    try:
+        response = llm.invoke(prompt)
+    except RateLimitError:
+        # Fallback to Gemini if Groq rate limit is hit
+        if model_name and not model_name.startswith("gemini-"):
+            try:
+                llm = get_llm(model_name="gemini-2.0-flash", temperature=temperature)
+                response = llm.invoke(prompt)
+            except Exception as e:
+                return f"Error: Rate limit exceeded on Groq and Gemini fallback failed: {str(e)}"
+        else:
+            return "Error: Rate limit exceeded. Please try again in a few minutes or use a different model."
     
     content = response.content
     if isinstance(content, list):
@@ -77,7 +96,10 @@ def generate_repo_summary(vectordb, model_name=None, temperature=0.2):
         [doc.page_content for doc in docs]
     )
 
-    llm = get_llm(model_name=model_name, temperature=temperature)
+    try:
+        llm = get_llm(model_name=model_name, temperature=temperature)
+    except ValueError:
+        return "Error: No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in .env file."
 
     prompt = f"""
 You are an expert software architect analyzing a new codebase.
@@ -114,7 +136,19 @@ Repository Context:
 
 If the context is insufficient, provide the best possible estimate based on common practices, but note that the context was limited.
 """
-    response = llm.invoke(prompt)
+    
+    try:
+        response = llm.invoke(prompt)
+    except RateLimitError:
+        # Fallback to Gemini if Groq rate limit is hit
+        if model_name and not model_name.startswith("gemini-"):
+            try:
+                llm = get_llm(model_name="gemini-2.0-flash", temperature=temperature)
+                response = llm.invoke(prompt)
+            except Exception as e:
+                return f"Error: Rate limit exceeded on Groq and Gemini fallback failed: {str(e)}"
+        else:
+            return "Error: Rate limit exceeded. Please try again in a few minutes or use a different model."
     
     # In newer langchain/gemini versions, content can sometimes be a list of blocks
     content = response.content
