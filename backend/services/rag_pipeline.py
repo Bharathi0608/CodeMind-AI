@@ -3,7 +3,7 @@ import os
 from langchain_google_genai import ChatGoogleGenerativeAI   
 # pyrefly: ignore [missing-import]
 from langchain_groq import ChatGroq
-from groq import RateLimitError
+from groq import RateLimitError, AuthenticationError
 
 def get_llm(model_name=None, temperature=0.2):
     groq_api_key = os.getenv("GROQ_API_KEY")
@@ -62,6 +62,8 @@ Answer based only on the repository context.
     
     try:
         response = llm.invoke(prompt)
+    except AuthenticationError:
+        return "Error: Invalid API key. Please check your GROQ_API_KEY in the .env file."
     except RateLimitError:
         # Fallback to Gemini if Groq rate limit is hit and Gemini API key is available
         if model_name and not model_name.startswith("gemini-") and os.getenv("GEMINI_API_KEY"):
@@ -139,6 +141,8 @@ If the context is insufficient, provide the best possible estimate based on comm
     
     try:
         response = llm.invoke(prompt)
+    except AuthenticationError:
+        return "Error: Invalid API key. Please check your GROQ_API_KEY in the .env file."
     except RateLimitError:
         # Fallback to Gemini if Groq rate limit is hit and Gemini API key is available
         if model_name and not model_name.startswith("gemini-") and os.getenv("GEMINI_API_KEY"):
