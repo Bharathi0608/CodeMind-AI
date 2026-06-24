@@ -63,15 +63,15 @@ Answer based only on the repository context.
     try:
         response = llm.invoke(prompt)
     except RateLimitError:
-        # Fallback to Gemini if Groq rate limit is hit
-        if model_name and not model_name.startswith("gemini-"):
+        # Fallback to Gemini if Groq rate limit is hit and Gemini API key is available
+        if model_name and not model_name.startswith("gemini-") and os.getenv("GEMINI_API_KEY"):
             try:
                 llm = get_llm(model_name="gemini-2.0-flash", temperature=temperature)
                 response = llm.invoke(prompt)
             except Exception as e:
-                return f"Error: Rate limit exceeded on Groq and Gemini fallback failed: {str(e)}"
+                return f"Error: Rate limit exceeded on Groq. Gemini fallback failed: {str(e)}. Please add GEMINI_API_KEY to your .env file or wait for Groq rate limit to reset."
         else:
-            return "Error: Rate limit exceeded. Please try again in a few minutes or use a different model."
+            return "Error: Rate limit exceeded on Groq. Please add GEMINI_API_KEY to your .env file for automatic fallback, or wait a few minutes for the rate limit to reset."
     
     content = response.content
     if isinstance(content, list):
@@ -140,15 +140,15 @@ If the context is insufficient, provide the best possible estimate based on comm
     try:
         response = llm.invoke(prompt)
     except RateLimitError:
-        # Fallback to Gemini if Groq rate limit is hit
-        if model_name and not model_name.startswith("gemini-"):
+        # Fallback to Gemini if Groq rate limit is hit and Gemini API key is available
+        if model_name and not model_name.startswith("gemini-") and os.getenv("GEMINI_API_KEY"):
             try:
                 llm = get_llm(model_name="gemini-2.0-flash", temperature=temperature)
                 response = llm.invoke(prompt)
             except Exception as e:
-                return f"Error: Rate limit exceeded on Groq and Gemini fallback failed: {str(e)}"
+                return f"Error: Rate limit exceeded on Groq. Gemini fallback failed: {str(e)}. Please add GEMINI_API_KEY to your .env file or wait for Groq rate limit to reset."
         else:
-            return "Error: Rate limit exceeded. Please try again in a few minutes or use a different model."
+            return "Error: Rate limit exceeded on Groq. Please add GEMINI_API_KEY to your .env file for automatic fallback, or wait a few minutes for the rate limit to reset."
     
     # In newer langchain/gemini versions, content can sometimes be a list of blocks
     content = response.content
