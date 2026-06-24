@@ -445,3 +445,27 @@ input:focus {
     line-height: 1.5;
 }
 
+/* ── Suppress browser extension injected overlays ───────────────────────── */
+[class*="browserstack"],
+[id*="browserstack"],
+[class*="lambdatest"],
+[id*="lambdatest"],
+[class*="lt-"],
+[id*="lt-"],
+[class*="eruda"],
+[id*="eruda"],
+[class*="vconsole"],
+[id*="vconsole"],
+[class*="__bs_"],
+[id*="__bs_"],
+[class*="wappalyzer"],
+[data-extension-id],
+#__ltc,
+#__bs_notify__,
+div.toolbar-container,
+.toolbar-container {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}

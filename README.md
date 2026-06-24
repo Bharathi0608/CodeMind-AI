@@ -30,6 +30,32 @@ CodeMind-AI is an intelligent, interactive web-based repository analyzer and con
 
 ---
 
+## 📂 Project Structure
+
+```text
+CodeMind-AI/
+│
+├── backend/                    # FastAPI Backend Application
+│   ├── services/               # Core business logic / pipelines
+│   │   ├── chunker.py          # Document loader & text splitter
+│   │   ├── embeddings.py       # Embeddings generator
+│   │   ├── github_loader.py    # Repository cloner
+│   │   ├── rag_pipeline.py     # RAG model & summary execution
+│   │   └── vector_store.py     # Chroma vector database creator
+│   ├── app.py                  # Main API server & routes
+│   └── config.py               # Application configuration
+│
+├── frontend/                   # Client-side Static Assets
+│   ├── index.html              # Main user interface
+│   ├── script.js               # Event handlers & visual renders
+│   └── style.css               # Modern dark-mode stylesheet
+│
+├── requirements.txt            # Python dependencies
+└── .env                        # Local environment secrets
+```
+
+---
+
 ## ⚙️ Installation & Setup
 
 ### 1. Prerequisites
@@ -76,32 +102,6 @@ python -m backend.app
 
 The application will start, serving both the API and the frontend user interface. Open your browser and navigate to:
 👉 **[http://localhost:8000](http://localhost:8000)**
-
----
-
-## 📂 Project Structure
-
-```text
-CodeMind-AI/
-│
-├── backend/                    # FastAPI Backend Application
-│   ├── services/               # Core business logic / pipelines
-│   │   ├── chunker.py          # Document loader & text splitter
-│   │   ├── embeddings.py       # Embeddings generator
-│   │   ├── github_loader.py    # Repository cloner
-│   │   ├── rag_pipeline.py     # RAG model & summary execution
-│   │   └── vector_store.py     # Chroma vector database creator
-│   ├── app.py                  # Main API server & routes
-│   └── config.py               # Application configuration
-│
-├── frontend/                   # Client-side Static Assets
-│   ├── index.html              # Main user interface
-│   ├── script.js               # Event handlers & visual renders
-│   └── style.css               # Modern dark-mode stylesheet
-│
-├── requirements.txt            # Python dependencies
-└── .env                        # Local environment secrets
-```
 
 ---
 
