@@ -208,3 +208,33 @@ function appendMessage(content, role) {
     chatHistory.appendChild(div);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
+
+// Setup & Running Guide Interactions
+document.addEventListener('DOMContentLoaded', () => {
+    const guideToggle = document.getElementById('guide-toggle');
+    const guideCard = guideToggle.closest('.guide-card');
+
+    guideToggle.addEventListener('click', () => {
+        guideCard.classList.toggle('collapsed');
+    });
+
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetTab = btn.getAttribute('data-tab');
+            
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const contentEl = document.getElementById(targetTab);
+            if (contentEl) {
+                contentEl.classList.add('active');
+            }
+        });
+    });
+});
+
