@@ -4,6 +4,41 @@ CodeMind-AI is an intelligent, interactive web-based repository analyzer and con
 
 ---
 
+## 📸 Screenshots
+
+### 🏠 Homepage
+The landing page where users can enter a GitHub repository URL and start AI-powered analysis.
+
+![Homepage](screenshots/homepage.jpeg)
+
+---
+
+### 📊 Dashboard
+Main dashboard displaying repository insights, architecture details, and generated reports.
+
+![Dashboard](screenshots/dashboard.jpeg)
+
+---
+
+### 🔄 Architecture Flowchart
+Automatically generated architecture flowchart visualizing repository structure and workflow.
+
+![Flowchart](screenshots/flowchart.jpeg)
+
+---
+
+### ⚙️ Workflow & Tools Analysis
+Detailed breakdown of tools, frameworks, dependencies, and application workflow.
+
+![Workflow](screenshots/workflow.jpeg)
+
+---
+
+### 💬 Interactive Codebase Q&A
+AI-powered chat interface that allows users to ask questions about the repository and receive contextual answers.
+
+![Ask Questions Interface](screenshots/ask-questions-interface.jpeg)
+
 ## ✨ Features
 
 - **GitHub Repository Cloning & Parsing**: Automatically clones a repository, filters source files, and processes code documents.
