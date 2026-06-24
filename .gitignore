@@ -5,3 +5,5 @@ venv/
 chroma_db/
 backend/chroma_db/
 backend/repositories/
+model_cache/
+temp_repos/

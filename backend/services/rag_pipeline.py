@@ -1,107 +1,214 @@
 import os
+
 # pyrefly: ignore [missing-import]
-from langchain_google_genai import ChatGoogleGenerativeAI   
+from langchain_google_genai import ChatGoogleGenerativeAI
 # pyrefly: ignore [missing-import]
 from langchain_groq import ChatGroq
+# pyrefly: ignore [missing-import]
 from groq import RateLimitError, AuthenticationError
 
+
 def get_llm(model_name=None, temperature=0.2):
+    """Return an LLM instance. Auto-selects model and falls back between providers."""
     groq_api_key = os.getenv("GROQ_API_KEY")
     gemini_api_key = os.getenv("GEMINI_API_KEY")
-    
-    # If no model is selected, fallback automatically
+
+    # Auto-select model when none specified — prefer Groq, fallback to Gemini
     if not model_name:
         if groq_api_key:
             model_name = "llama-3.3-70b-versatile"
         elif gemini_api_key:
             model_name = "gemini-2.0-flash"
         else:
-            raise ValueError("No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in .env file.")
-            
+            raise ValueError(
+                "No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in your .env file."
+            )
+
+    # If a gemini model was requested but no Gemini key, fall back to Groq
     if model_name.startswith("gemini-"):
-        return ChatGoogleGenerativeAI(
-            model=model_name,
-            temperature=temperature,
-            max_retries=5
-        )
+        if gemini_api_key:
+            return ChatGoogleGenerativeAI(
+                model=model_name,
+                temperature=temperature,
+                google_api_key=gemini_api_key,
+                max_retries=2,
+            )
+        elif groq_api_key:
+            # Gemini key missing — silently fall back to Groq
+            return ChatGroq(
+                model="llama-3.3-70b-versatile",
+                temperature=temperature,
+                max_retries=2,
+                groq_api_key=groq_api_key,
+            )
+        else:
+            raise ValueError(
+                "No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in your .env file."
+            )
     else:
-        return ChatGroq(
-            model=model_name,
-            temperature=temperature,
-            max_retries=5,
-            groq_api_key=groq_api_key
+        if groq_api_key:
+            return ChatGroq(
+                model=model_name,
+                temperature=temperature,
+                max_retries=2,
+                groq_api_key=groq_api_key,
+            )
+        elif gemini_api_key:
+            # Groq key missing — silently fall back to Gemini
+            return ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",
+                temperature=temperature,
+                google_api_key=gemini_api_key,
+                max_retries=2,
+            )
+        else:
+            raise ValueError(
+                "No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in your .env file."
+            )
+
+
+def _extract_text(response) -> str:
+    """Extract plain text from an LLM response, handling list-of-blocks format."""
+    content = response.content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, dict) and "text" in block:
+                parts.append(block["text"])
+            elif isinstance(block, str):
+                parts.append(block)
+        return "".join(parts)
+    return str(content)
+
+
+def _invoke_llm(llm, prompt: str, model_name: str | None, temperature: float) -> str:
+    """
+    Invoke an LLM with full error handling and automatic fallback:
+      - Groq AuthenticationError  → friendly message
+      - Groq RateLimitError       → fallback to Gemini (if key available)
+      - Gemini RESOURCE_EXHAUSTED → fallback to Groq  (if key available)
+      - All other exceptions      → friendly message
+    Returns the response text string on success.
+    """
+    try:
+        response = llm.invoke(prompt)
+        return _extract_text(response)
+
+    except AuthenticationError:
+        return (
+            "Error: Invalid Groq API key. "
+            "Please check your GROQ_API_KEY in the .env file."
         )
 
-def ask_question(vectordb, question, model_name=None, temperature=0.2):
-    docs = vectordb.similarity_search(
-        question,
-        k=5
-    )
+    except RateLimitError:
+        groq_key = os.getenv("GROQ_API_KEY")
+        gemini_key = os.getenv("GEMINI_API_KEY")
 
-    context = "\n\n".join(
-        [doc.page_content for doc in docs]
-    )
+        # First try: switch to llama-3.1-8b-instant (20k TPM — 3x higher limit)
+        if groq_key and model_name != "llama-3.1-8b-instant":
+            try:
+                fallback_llm = ChatGroq(
+                    model="llama-3.1-8b-instant",
+                    temperature=temperature,
+                    max_retries=2,
+                    groq_api_key=groq_key,
+                )
+                response = fallback_llm.invoke(prompt)
+                return _extract_text(response)
+            except RateLimitError:
+                pass  # Also rate-limited — try Gemini next
+            except Exception as fe:
+                return f"Error: Groq fallback model also failed: {fe}"
+
+        # Second try: fall back to Gemini
+        if gemini_key:
+            try:
+                fallback_llm = get_llm(model_name="gemini-2.0-flash", temperature=temperature)
+                response = fallback_llm.invoke(prompt)
+                return _extract_text(response)
+            except Exception as fe:
+                return (
+                    f"Error: Groq rate limit exceeded and Gemini fallback also failed: {fe}. "
+                    "Please wait a few minutes and try again."
+                )
+
+        return (
+            "Error: Groq rate limit exceeded. "
+            "Please wait 1-2 minutes and try again. "
+            "Tip: Add GEMINI_API_KEY to your .env for automatic fallback."
+        )
+
+    except Exception as e:
+        err_str = str(e)
+
+        # Gemini quota exhausted (free-tier daily/minute limit)
+        if "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
+            groq_key = os.getenv("GROQ_API_KEY")
+            if groq_key:
+                try:
+                    fallback_llm = get_llm(
+                        model_name="llama-3.3-70b-versatile", temperature=temperature
+                    )
+                    response = fallback_llm.invoke(prompt)
+                    return _extract_text(response)
+                except Exception as fe:
+                    return (
+                        f"Error: Gemini quota exhausted. "
+                        f"Groq fallback also failed: {fe}."
+                    )
+            return (
+                "Error: Your Gemini free-tier quota is exhausted. "
+                "Add a GROQ_API_KEY to your .env file for automatic fallback, "
+                "or wait until tomorrow for the Gemini quota to reset."
+            )
+
+        # Any other unexpected error
+        return f"Error: An unexpected error occurred — {err_str}"
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def ask_question(vectordb, question: str, model_name: str | None = None, temperature: float = 0.2) -> str:
+    """Answer a question about the indexed repository using RAG."""
+    docs = vectordb.similarity_search(question, k=5)
+    context = "\n\n".join(doc.page_content for doc in docs)
 
     try:
         llm = get_llm(model_name=model_name, temperature=temperature)
-    except ValueError:
-        return "Error: No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in .env file."
+    except ValueError as e:
+        return f"Error: {e}"
 
     prompt = f"""
-
 You are an expert software architect.
 
 Repository Context:
-{context}   
+{context}
 
 Question:
-{question}  
+{question}
 
 Answer based only on the repository context.
 """
-    
-    try:
-        response = llm.invoke(prompt)
-    except AuthenticationError:
-        return "Error: Invalid API key. Please check your GROQ_API_KEY in the .env file."
-    except RateLimitError:
-        # Fallback to Gemini if Groq rate limit is hit and Gemini API key is available
-        if model_name and not model_name.startswith("gemini-") and os.getenv("GEMINI_API_KEY"):
-            try:
-                llm = get_llm(model_name="gemini-2.0-flash", temperature=temperature)
-                response = llm.invoke(prompt)
-            except Exception as e:
-                return f"Error: Rate limit exceeded on Groq. Gemini fallback failed: {str(e)}. Please add GEMINI_API_KEY to your .env file or wait for Groq rate limit to reset."
-        else:
-            return "Error: Rate limit exceeded on Groq. Please add GEMINI_API_KEY to your .env file for automatic fallback, or wait a few minutes for the rate limit to reset."
-    
-    content = response.content
-    if isinstance(content, list):
-        text_content = ""
-        for block in content:
-            if isinstance(block, dict) and "text" in block:
-                text_content += block["text"]
-            elif isinstance(block, str):
-                text_content += block
-        return text_content
-        
-    return str(content)
+    return _invoke_llm(llm, prompt, model_name, temperature)
 
-def generate_repo_summary(vectordb, model_name=None, temperature=0.2):
-    summary_question = "Explain the detailed architecture, list the tools and frameworks used, provide a high-level overview of how this project works, and create a highly detailed mermaid flowchart of the architecture showing specific directories and modules."
-    docs = vectordb.similarity_search(
-        summary_question,
-        k=30
-    )
 
-    context = "\n\n".join(
-        [doc.page_content for doc in docs]
+def generate_repo_summary(vectordb, model_name: str | None = None, temperature: float = 0.2) -> str:
+    """Generate a detailed architectural summary of the indexed repository."""
+    summary_question = (
+        "Explain the detailed architecture, list the tools and frameworks used, "
+        "provide a high-level overview of how this project works, and create a "
+        "highly detailed mermaid flowchart of the architecture showing specific "
+        "directories and modules."
     )
+    docs = vectordb.similarity_search(summary_question, k=8)
+    context = "\n\n".join(doc.page_content for doc in docs)
 
     try:
         llm = get_llm(model_name=model_name, temperature=temperature)
-    except ValueError:
-        return "Error: No API key found. Please set GROQ_API_KEY or GEMINI_API_KEY in .env file."
+    except ValueError as e:
+        return f"Error: {e}"
 
     prompt = f"""
 You are an expert software architect analyzing a new codebase.
@@ -138,31 +245,4 @@ Repository Context:
 
 If the context is insufficient, provide the best possible estimate based on common practices, but note that the context was limited.
 """
-    
-    try:
-        response = llm.invoke(prompt)
-    except AuthenticationError:
-        return "Error: Invalid API key. Please check your GROQ_API_KEY in the .env file."
-    except RateLimitError:
-        # Fallback to Gemini if Groq rate limit is hit and Gemini API key is available
-        if model_name and not model_name.startswith("gemini-") and os.getenv("GEMINI_API_KEY"):
-            try:
-                llm = get_llm(model_name="gemini-2.0-flash", temperature=temperature)
-                response = llm.invoke(prompt)
-            except Exception as e:
-                return f"Error: Rate limit exceeded on Groq. Gemini fallback failed: {str(e)}. Please add GEMINI_API_KEY to your .env file or wait for Groq rate limit to reset."
-        else:
-            return "Error: Rate limit exceeded on Groq. Please add GEMINI_API_KEY to your .env file for automatic fallback, or wait a few minutes for the rate limit to reset."
-    
-    # In newer langchain/gemini versions, content can sometimes be a list of blocks
-    content = response.content
-    if isinstance(content, list):
-        text_content = ""
-        for block in content:
-            if isinstance(block, dict) and "text" in block:
-                text_content += block["text"]
-            elif isinstance(block, str):
-                text_content += block
-        return text_content
-    
-    return str(content)
+    return _invoke_llm(llm, prompt, model_name, temperature)

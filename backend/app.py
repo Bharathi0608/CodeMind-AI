@@ -40,14 +40,14 @@ GLOBAL_STATE = {
 
 class AnalyzeRequest(BaseModel):
     repo_url: str
-    model_name: str = "llama-3.3-70b-versatile"
+    model_name: str = "gemini-2.0-flash"
     temperature: float = 0.2
     chunk_size: int = 1000
     chunk_overlap: int = 200
 
 class ChatRequest(BaseModel):
     query: str
-    model_name: str = "llama-3.3-70b-versatile"
+    model_name: str = "gemini-2.0-flash"
     temperature: float = 0.2
 
 @app.post("/api/analyze")
