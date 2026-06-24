@@ -10,3 +10,4 @@ fastapi
 uvicorn
 pydantic
 langchain-groq
+sentence-transformers

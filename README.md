@@ -9,7 +9,6 @@ CodeMind-AI is an intelligent, interactive web-based repository analyzer and con
 - **GitHub Repository Cloning & Parsing**: Automatically clones a repository, filters source files, and processes code documents.
 - **RAG-Powered Code Q&A**: Uses Retrieval-Augmented Generation (RAG) to answer technical questions about your code using LangChain, Google GenAI, or Groq (Llama models).
 - **Interactive Architecture Flowcharts**: Generates structural execution diagrams using Mermaid, rendered interactively with panning, zooming, and nodes color-coded by tier (backend vs. helper services).
-- **Comprehensive Reports**: Automatically produces markdown reports covering architecture overview, tools/frameworks detected, and step-by-step functionality, ready for download.
 - **Clean Responsive Web UI**: Premium design built with modern CSS (glassmorphism, vibrant dark mode gradients) and vanilla JavaScript.
 
 ---
@@ -54,56 +53,6 @@ CodeMind-AI/
 └── .env                        # Local environment secrets
 ```
 
----
-
-## ⚙️ Installation & Setup
-
-### 1. Prerequisites
-Ensure you have **Python 3.10+** installed on your system.
-
-### 2. Clone the Repository
-```bash
-git clone https://github.com/Bharathi0608/CodeMind-AI.git
-cd CodeMind-AI
-```
-
-### 3. Setup Virtual Environment
-* **On Windows (PowerShell):**
-  ```powershell
-  python -m venv venv
-  .\venv\Scripts\Activate.ps1
-  ```
-* **On macOS/Linux:**
-  ```bash
-  python -m venv venv
-  source venv/bin/activate
-  ```
-
-### 4. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Environment Variables Configuration
-Create a `.env` file in the root of the project:
-```env
-GROQ_API_KEY=your_groq_api_key_here
-# Optional: GEMINI_API_KEY=your_gemini_api_key_here
-```
-
----
-
-## 🚀 How to Run
-
-Start the FastAPI application by running:
-```bash
-python -m backend.app
-```
-
-The application will start, serving both the API and the frontend user interface. Open your browser and navigate to:
-👉 **[http://localhost:8000](http://localhost:8000)**
-
----
 
 ## 🔒 License
 

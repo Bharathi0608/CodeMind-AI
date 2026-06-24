@@ -4,6 +4,7 @@ from langchain_community.vectorstores import Chroma
 # pyrefly: ignore [missing-import]
 from langchain_core.documents import Document
 import uuid
+import os
 
 
 def create_vector_store(
@@ -24,10 +25,11 @@ def create_vector_store(
             )
         )
 
+    # Use in-memory Chroma to avoid database corruption issues
     db = Chroma.from_documents(
         docs,
         embeddings,
-        collection_name=f"repo_{uuid.uuid4().hex}"
+        collection_name="repo_analysis"
     )
 
     return db

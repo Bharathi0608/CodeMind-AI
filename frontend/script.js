@@ -165,29 +165,6 @@ async function renderMermaid(code) {
 // ── Download Full PDF Report ──────────────────────────────────────────────
 // Use window 'load' so all non-module scripts (jsPDF, marked) are available
 window.addEventListener('load', () => {
-    // ── Guide Toggle ──────────────────────────────────────────────────────
-    const guideToggle = document.getElementById('guide-toggle');
-    if (guideToggle) {
-        const guideCard = guideToggle.closest('.guide-card');
-        guideToggle.addEventListener('click', () => {
-            guideCard.classList.toggle('collapsed');
-        });
-    }
-
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetTab = btn.getAttribute('data-tab');
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
-            const contentEl = document.getElementById(targetTab);
-            if (contentEl) contentEl.classList.add('active');
-        });
-    });
-
     // ── SVG Flowchart Download ──────────────────────────────────────────────────
     const flowchartBtn = document.getElementById('download-flowchart-btn');
     if (flowchartBtn) {
@@ -422,52 +399,6 @@ window.addEventListener('load', () => {
             sectionHeader('⚙️  How it Works');
             renderSection(howText);
             y += 4;
-        }
-
-        // ════════════════════════════════════════════════════════════════════
-        // SECTION 5 — 📋 SETUP & RUNNING GUIDE
-        // ════════════════════════════════════════════════════════════════════
-        sectionHeader('📋  Setup & Running Guide');
-        renderText('Follow the steps below to set up and run CodeMind AI locally.', 9, [70, 70, 70]);
-        y += 4;
-
-        const guideSteps = [
-            { step: 'Step 1 — Clone the Repository', lines: ['git clone https://github.com/Bharathi0608/CodeMind-AI.git', 'cd CodeMind-AI'] },
-            { step: 'Step 2 — Create & Activate Virtual Environment', lines: ['python -m venv venv', '', '# On Windows:', '.\\venv\\Scripts\\Activate.ps1', '', '# On macOS / Linux:', 'source venv/bin/activate'] },
-            { step: 'Step 3 — Install Dependencies', lines: ['pip install -r requirements.txt'] },
-            { step: 'Step 4 — Configure Environment Variables', lines: ['# Create a .env file in the project root:', 'GROQ_API_KEY=your_groq_api_key_here', '', '# Optional (for Gemini):', 'GEMINI_API_KEY=your_gemini_api_key_here'] },
-            { step: 'Step 5 — Run the Application', lines: ['python -m backend.app', '', '# Then open your browser at:', 'http://localhost:8000'] }
-        ];
-
-        for (const item of guideSteps) {
-            const blockH = (item.lines.length + 1) * 5.5 + 8;
-            checkPageBreak(blockH + 14);
-
-            // Step label
-            doc.setFillColor(220, 235, 255);
-            doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9.5);
-            doc.setTextColor(0, 50, 160);
-            doc.text(item.step, margin + 4, y + 5.5);
-            y += 10;
-
-            // Code block
-            const codeH = (item.lines.length + 1) * 5.5;
-            doc.setFillColor(14, 22, 38);
-            doc.roundedRect(margin, y, contentW, codeH, 2, 2, 'F');
-            doc.setFont('courier', 'normal');
-            doc.setFontSize(8.5);
-            y += 5;
-            for (const codeLine of item.lines) {
-                if (!codeLine) { y += 3; continue; }
-                doc.setTextColor(codeLine.startsWith('#') ? 120 : 97, codeLine.startsWith('#') ? 140 : 175, codeLine.startsWith('#') ? 180 : 239);
-                doc.text(codeLine, margin + 5, y);
-                y += 5.5;
-            }
-            y += 7;
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(30, 30, 30);
         }
 
         // ── Footer on every page ─────────────────────────────────────────────

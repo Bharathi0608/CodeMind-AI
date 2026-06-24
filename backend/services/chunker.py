@@ -42,11 +42,18 @@ def load_repository_files(repo_path):
                 )
 
                 try:
+                    # Normalize path for Windows compatibility
+                    file_path = os.path.normpath(file_path)
+                    
+                    # Skip if path is too long for Windows
+                    if len(file_path) > 260:
+                        continue
 
                     with open(
                         file_path,
                         "r",
-                        encoding="utf-8"
+                        encoding="utf-8",
+                        errors="ignore"
                     ) as f:
 
                         content = f.read()
@@ -58,8 +65,9 @@ def load_repository_files(repo_path):
                         }
                     )
 
-                except Exception:
-                    pass
+                except (OSError, IOError, UnicodeDecodeError) as e:
+                    # Skip files that can't be read
+                    continue
 
     return documents
 

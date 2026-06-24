@@ -82,6 +82,9 @@ def generate_repo_summary(vectordb, model_name=None, temperature=0.2):
     prompt = f"""
 You are an expert software architect analyzing a new codebase.
 Using the provided repository context, create a comprehensive overview of the system architecture and its sequential runtime execution flow.
+
+CRITICAL INSTRUCTION: You are analyzing a USER-SUPPLIED repository. DO NOT mention or reference CodeMind-AI, FastAPI, or any repository analyzer tool. Focus ONLY on the repository being analyzed based on the file paths and content provided in the context.
+
 Structure your response exactly as follows:
 
 ## 🏗 Architecture

@@ -53,17 +53,43 @@ class ChatRequest(BaseModel):
 @app.post("/api/analyze")
 async def analyze_repo(req: AnalyzeRequest):
     try:
-        shutil.rmtree("./chroma_db", ignore_errors=True)
+        print(f"Starting analysis for repo: {req.repo_url}")
         
+        # Clean up chroma_db directory with Windows-compatible handling
+        chroma_path = os.path.join(os.getcwd(), "chroma_db")
+        if os.path.exists(chroma_path):
+            try:
+                shutil.rmtree(chroma_path, ignore_errors=True)
+                print("Cleaned chroma_db")
+            except Exception as cleanup_error:
+                print(f"Warning: Could not clean chroma_db: {cleanup_error}")
+        
+        # Clean up temp_repos directory
+        temp_repos_path = os.path.join(os.getcwd(), "temp_repos")
+        if os.path.exists(temp_repos_path):
+            try:
+                shutil.rmtree(temp_repos_path, ignore_errors=True)
+                print("Cleaned temp_repos")
+            except Exception as cleanup_error:
+                print(f"Warning: Could not clean temp_repos: {cleanup_error}")
+        
+        print("Cloning repository...")
         repo_path = clone_repository(req.repo_url)
+        print(f"Repository cloned to: {repo_path}")
         GLOBAL_STATE["repo_path"] = repo_path
         
+        print("Loading repository files...")
         docs = load_repository_files(repo_path)
+        print(f"Loaded {len(docs)} files")
         chunks = chunk_documents(docs, chunk_size=req.chunk_size, chunk_overlap=req.chunk_overlap)
+        print(f"Created {len(chunks)} chunks")
         
+        print("Generating embeddings...")
         embeddings = get_embeddings()
+        print("Creating vector store...")
         vectordb = create_vector_store(chunks, embeddings)
         GLOBAL_STATE["vectordb"] = vectordb
+        print("Vector store created")
         
         summary = generate_repo_summary(vectordb, model_name=req.model_name, temperature=req.temperature)
         
@@ -120,7 +146,7 @@ async def analyze_repo(req: AnalyzeRequest):
                 temp_line = re.sub(r'(^|-->|-.->|==>|---|---|\||;)\s*(\b\w+)\s*(\[\()\s*(.*?)\s*(\)\])', repl_shape, temp_line)
                 temp_line = re.sub(r'(^|-->|-.->|==>|---|---|\||;)\s*(\b\w+)\s*(\(\()\s*(.*?)\s*(\)\))', repl_shape, temp_line)
                 temp_line = re.sub(r'(^|-->|-.->|==>|---|---|\||;)\s*(\b\w+)\s*(\[)\s*(.*?)\s*(\])', repl_shape, temp_line)
-                temp_line = re.sub(r'(^|-->|-.->|==>|---|---|\||;)\s*(\b\w+)\s*(\()\s*(.*?)\s*(\))', repl_shape, temp_line)
+                temp_line = re.sub(r'(^|-->|-.->|==>|---|---|\||;)\s*(\b\w+)\s*(\()\s*(.*?)\s*(\)\))', repl_shape, temp_line)
                 temp_line = re.sub(r'(^|-->|-.->|==>|---|---|\||;)\s*(\b\w+)\s*(\{)\s*(.*?)\s*(\})', repl_shape, temp_line)
                 
                 for idx, placeholder in enumerate(placeholders):
@@ -134,8 +160,12 @@ async def analyze_repo(req: AnalyzeRequest):
             "summary": clean_summary,
             "mermaid_code": mermaid_code
         }
-    except Exception as e:
+    except ValueError as e:
         return {"success": False, "error": str(e)}
+    except Exception as e:
+        import traceback
+        error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+        return {"success": False, "error": error_detail}
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
@@ -166,4 +196,4 @@ async def serve_frontend(full_path: str):
     raise HTTPException(status_code=404, detail="Not Found")
 
 if __name__ == "__main__":
-    uvicorn.run("backend.app:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("backend.app:app", host="0.0.0.0", port=8002, reload=False)
